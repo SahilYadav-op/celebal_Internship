@@ -45,7 +45,7 @@ class Chatbot:
         try:
             response = self.co.chat(
                 message=user_message,
-                model="command-r-plus",
+                model="command-r-plus-08-2024",
                 documents=documents,
                 conversation_id=self.conversation_id,
                 temperature=0.3,  # lower temperature for more factual answers

@@ -11,6 +11,11 @@ Instead of relying only on a language model's internal knowledge, this system re
 
 You can upload your own PDFs - notes, resume, research papers, books - anything you want to ask questions about.
 
+## Proof of Work
+Here is a screenshot showing the fully working Document QA Bot successfully answering questions based on the uploaded PDF using the selected models:
+
+![Working App Screenshot](screenshot.png)
+
 ## Key Concepts
 
 ### Retrieval
