@@ -14,7 +14,7 @@ You can upload your own PDFs - notes, resume, research papers, books - anything 
 ## Proof of Work
 Here is a screenshot showing the fully working Document QA Bot successfully answering questions based on the uploaded PDF using the selected models:
 
-![Working App Screenshot](screenshot.png)
+![Working App Screenshot](screenshot.jpeg)
 
 ## Key Concepts
 
