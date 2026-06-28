@@ -2,6 +2,8 @@
 
 **Name:** Sahil Yadav
 
+**Note:** There were no clear resources given for this week. The task said quiz and was given with questions and answers already, so I have submitted the quiz as it is.
+
 ---
 
 ## Q1. Explain the concept of a stateful directed graph in agent pipelines. How does it differ from a simple linear pipeline?
