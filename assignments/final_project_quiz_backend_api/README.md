@@ -157,8 +157,8 @@ curl http://127.0.0.1:8000/questions/1
 
 ## Testing
 
+Run from the `quiz-backend/` folder (same place as steps 1-4 above):
 ```bash
-cd quiz-backend
 pytest
 ```
 
