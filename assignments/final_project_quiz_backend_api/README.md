@@ -5,6 +5,23 @@ A RESTful backend for creating and managing quiz questions and answer choices, w
 **Final Project - Celebal Technologies Internship**
 **Author**: Sahil Yadav
 
+## 🚀 Live Demo
+
+[![Launch App](https://img.shields.io/badge/🚀_Launch-Live_Demo-4A90D9?style=for-the-badge)](https://celebal-internship-sahilgod-quiz-backend.streamlit.app/)
+[![API Docs](https://img.shields.io/badge/📄_API-Swagger_Docs-555555?style=for-the-badge)](https://celebal-internship-quiz-backend-api.onrender.com/docs)
+
+The link above is a live, working instance of this project, dashboard talking to a live instance of the API.
+
+> **First load can be slow.** Both are hosted on free tiers that sleep after about 15 minutes of no traffic. If nobody has opened the link in a while, the first request can take 50+ seconds while it wakes back up. This is normal, just wait a bit and refresh.
+
+### How it's hosted
+
+| Service | What it does here |
+|---------|--------------------|
+| [Neon](https://neon.tech) | Hosts the Postgres database the live API reads/writes to. Needed because Render's free disk resets on every restart, so SQLite would lose data every time — Neon keeps it separate and persistent. |
+| [Render](https://render.com) | Runs the FastAPI backend (`quiz-backend/`) as an actual live process. GitHub only stores code, it doesn't run it, so something has to keep `uvicorn` running continuously. |
+| [Streamlit Community Cloud](https://streamlit.io/cloud) | Runs the dashboard (`dashboard/`) the same way, pointed at the Render API URL via a secret (`API_BASE_URL`). |
+
 ## Overview
 
 The project is a general purpose quiz management system (Option 1 from the project document). Every question can have a category like General Knowledge, Programming, Mathematics, Data Science, Business Studies or Aptitude, so quizzes from multiple domains can live in the same database.
