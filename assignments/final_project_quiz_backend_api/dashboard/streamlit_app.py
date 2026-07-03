@@ -79,6 +79,12 @@ with st.sidebar:
     api_docs = f"{st.session_state['api_base_url']}/docs"
     st.markdown(f"[API docs / Swagger]({api_docs})")
 
+    st.divider()
+    st.markdown(
+        'Made by <a href="https://www.linkedin.com/in/sahilgod01" target="_blank">Sahil Yadav</a>',
+        unsafe_allow_html=True,
+    )
+
 
 # main area with 3 tabs - quiz first, then manage, then analytics
 tab_quiz, tab_manage, tab_analytics = st.tabs(["Take a Quiz", "Manage", "Analytics"])
