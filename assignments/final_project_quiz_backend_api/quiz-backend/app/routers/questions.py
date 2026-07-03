@@ -1,14 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
 from app.database import get_db
+from app.limiter import limiter
 
 router = APIRouter(prefix="/questions", tags=["Questions"])
 
 
 @router.post("", response_model=schemas.QuestionResponse, status_code=status.HTTP_201_CREATED)
-def create_question(payload: schemas.QuestionCreate, db: Session = Depends(get_db)):
+@limiter.limit("20/minute")
+def create_question(request: Request, payload: schemas.QuestionCreate, db: Session = Depends(get_db)):
     """Create a new quiz question."""
     return crud.create_question(db, payload)
 
@@ -34,7 +36,8 @@ def get_question(question_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{question_id}", response_model=schemas.QuestionResponse)
-def update_question(question_id: int, payload: schemas.QuestionUpdate, db: Session = Depends(get_db)):
+@limiter.limit("20/minute")
+def update_question(request: Request, question_id: int, payload: schemas.QuestionUpdate, db: Session = Depends(get_db)):
     """Update an existing question."""
     question = crud.get_question(db, question_id)
     if question is None:
@@ -43,7 +46,8 @@ def update_question(question_id: int, payload: schemas.QuestionUpdate, db: Sessi
 
 
 @router.delete("/{question_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_question(question_id: int, db: Session = Depends(get_db)):
+@limiter.limit("20/minute")
+def delete_question(request: Request, question_id: int, db: Session = Depends(get_db)):
     """Delete a question and all of its associated choices."""
     question = crud.get_question(db, question_id)
     if question is None:

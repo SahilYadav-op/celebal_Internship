@@ -1,14 +1,16 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy.orm import Session
 
 from app import crud, schemas
 from app.database import get_db
+from app.limiter import limiter
 
 router = APIRouter(prefix="/choices", tags=["Choices"])
 
 
 @router.post("", response_model=schemas.ChoiceResponse, status_code=status.HTTP_201_CREATED)
-def create_choice(payload: schemas.ChoiceCreate, db: Session = Depends(get_db)):
+@limiter.limit("20/minute")
+def create_choice(request: Request, payload: schemas.ChoiceCreate, db: Session = Depends(get_db)):
     """Add a new answer choice to an existing question."""
     if crud.get_question(db, payload.question_id) is None:
         raise HTTPException(
@@ -39,7 +41,8 @@ def get_choice(choice_id: int, db: Session = Depends(get_db)):
 
 
 @router.put("/{choice_id}", response_model=schemas.ChoiceResponse)
-def update_choice(choice_id: int, payload: schemas.ChoiceUpdate, db: Session = Depends(get_db)):
+@limiter.limit("20/minute")
+def update_choice(request: Request, choice_id: int, payload: schemas.ChoiceUpdate, db: Session = Depends(get_db)):
     """Update an answer choice."""
     choice = crud.get_choice(db, choice_id)
     if choice is None:
@@ -48,7 +51,8 @@ def update_choice(choice_id: int, payload: schemas.ChoiceUpdate, db: Session = D
 
 
 @router.delete("/{choice_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_choice(choice_id: int, db: Session = Depends(get_db)):
+@limiter.limit("20/minute")
+def delete_choice(request: Request, choice_id: int, db: Session = Depends(get_db)):
     """Delete an answer choice."""
     choice = crud.get_choice(db, choice_id)
     if choice is None:

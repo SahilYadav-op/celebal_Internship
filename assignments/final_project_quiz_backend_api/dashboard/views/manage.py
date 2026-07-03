@@ -3,6 +3,7 @@
 import streamlit as st
 
 import api_client as api
+from api_client import escape_markdown as esc
 
 
 def show():
@@ -38,8 +39,8 @@ def show():
         return
 
     def _label(q):
-        cat = f"[{q.get('category') or '-'}]"
-        text = q["question_text"]
+        cat = f"[{esc(q.get('category') or '-')}]"
+        text = esc(q["question_text"])
         short = text[:65] + "..." if len(text) > 65 else text
         return f"#{q['id']} {cat}  {short}"
 
@@ -99,7 +100,7 @@ def show():
     if choices:
         for c in choices:
             suffix = "  (marked correct)" if c["is_correct"] else ""
-            label = f"{c['choice_text'][:60]}{suffix}"
+            label = f"{esc(c['choice_text'][:60])}{suffix}"
             with st.expander(label):
                 with st.form(f"form_edit_c_{c['id']}"):
                     new_ct = st.text_input("Choice text", value=c["choice_text"])
@@ -130,5 +131,5 @@ def show():
                 else:
                     res = api.create_choice(q["id"], new_ct.strip(), is_correct=is_correct)
                     if res:
-                        st.success(f"Choice '{new_ct.strip()}' added.")
+                        st.success(f"Choice '{esc(new_ct.strip())}' added.")
                         st.rerun()

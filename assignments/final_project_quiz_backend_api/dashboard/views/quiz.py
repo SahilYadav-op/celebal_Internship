@@ -4,6 +4,7 @@ import random
 import streamlit as st
 
 import api_client as api
+from api_client import escape_markdown as esc
 
 
 def _reset():
@@ -35,14 +36,19 @@ def show():
 
     # setup screen (shown until the user starts a quiz)
     if "_quiz_qs" not in st.session_state:
-        categories = sorted(set(q.get("category") or "Uncategorized" for q in playable))
+        raw_categories = sorted(set(q.get("category") or "Uncategorized" for q in playable))
+        # Map escaped (safe-to-display) labels back to the raw category
+        # values so filtering below still matches what's stored on each
+        # question - only the label shown in the dropdown is escaped.
+        cat_label_map = {esc(c): c for c in raw_categories}
 
         st.subheader("Configure your quiz")
         st.write(f"{len(playable)} ready question(s) available.")
 
         col1, col2 = st.columns(2)
         with col1:
-            selected_cat = st.selectbox("Category", ["All categories"] + categories)
+            selected_label = st.selectbox("Category", ["All categories"] + list(cat_label_map.keys()))
+            selected_cat = "All categories" if selected_label == "All categories" else cat_label_map[selected_label]
         with col2:
             pool = [
                 q for q in playable
@@ -51,7 +57,7 @@ def show():
             ]
             max_q = len(pool)
             if max_q == 0:
-                st.warning(f"No ready questions in '{selected_cat}'.")
+                st.warning(f"No ready questions in '{esc(selected_cat)}'.")
                 return
             if max_q == 1:
                 # st.slider requires min < max, so a single-question pool
@@ -80,14 +86,14 @@ def show():
         st.divider()
 
         for i, q in enumerate(qs, 1):
-            st.markdown(f"**Q{i}.  {q['question_text']}**")
+            st.markdown(f"**Q{i}.  {esc(q['question_text'])}**")
 
             # Use choice ids as the radio options (format_func displays the
             # text) instead of matching a selection back to an id by
             # comparing displayed text - that breaks if two choices in the
             # same question happen to share identical text.
             choice_ids = [c["id"] for c in q["choices"]]
-            choice_text_by_id = {c["id"]: c["choice_text"] for c in q["choices"]}
+            choice_text_by_id = {c["id"]: esc(c["choice_text"]) for c in q["choices"]}
 
             current_id = answers.get(q["id"])
             current_index = choice_ids.index(current_id) if current_id in choice_ids else None
@@ -171,14 +177,14 @@ def show():
             correct_text = correct_choice["choice_text"] if correct_choice else "-"
 
             status = "correct" if got_it else "incorrect"
-            with st.expander(f"Q{i} ({status}): {q['question_text'][:70]}"):
-                st.write(f"Your answer: {chosen_text}")
+            with st.expander(f"Q{i} ({status}): {esc(q['question_text'][:70])}"):
+                st.write(f"Your answer: {esc(chosen_text)}")
                 if got_it:
                     st.success("Correct.")
                 else:
-                    st.error(f"Incorrect. The correct answer was: {correct_text}")
+                    st.error(f"Incorrect. The correct answer was: {esc(correct_text)}")
                 if q.get("category"):
-                    st.caption(f"Category: {q['category']}")
+                    st.caption(f"Category: {esc(q['category'])}")
 
         st.divider()
         if st.button("Take another quiz", type="primary"):

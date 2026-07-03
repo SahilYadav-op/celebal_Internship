@@ -52,15 +52,12 @@ with st.sidebar:
     st.divider()
 
     st.subheader("API Connection")
-    new_url = st.text_input(
-        "API base URL",
-        value=st.session_state["api_base_url"],
-        help="Change this if the backend is running somewhere else.",
-    )
-    if new_url.rstrip("/") != st.session_state["api_base_url"]:
-        st.session_state["api_base_url"] = new_url.rstrip("/")
-        api.clear_cache()
-        st.rerun()
+    # Not an editable field: letting any visitor to a public deployment
+    # redirect the server's own outbound requests to an arbitrary URL
+    # would be a server-side request forgery risk. The API base URL is
+    # configured once via an env var or secrets.toml (see get_api_url()),
+    # never from user input.
+    st.caption(st.session_state["api_base_url"])
 
     if api.health_check():
         st.success("Connected")

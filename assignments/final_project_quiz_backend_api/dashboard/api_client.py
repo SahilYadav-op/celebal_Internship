@@ -1,7 +1,25 @@
 """Helper functions that call the FastAPI backend using requests."""
 
+import re
+
 import requests
 import streamlit as st
+
+
+def escape_markdown(text):
+    # Question/choice text comes from anyone hitting the (unauthenticated)
+    # API directly, not just the dashboard's own forms. Escaping markdown
+    # special characters before it goes into st.markdown()/st.write()/
+    # st.error() etc. stops it from being rendered as clickable links,
+    # bold text, or other formatting the API never validated.
+    text = re.sub(r"([\\`*_{}\[\]()#+\-.!<>|])", r"\\\1", str(text))
+    # Streamlit's markdown renderer auto-links bare "http(s)://" substrings
+    # even once the surrounding [text](url) syntax above is escaped, so a
+    # plain URL in the text would still render as a clickable link. Break
+    # the pattern with a zero-width space the renderer can't autolink
+    # around but a reader can't see, without touching visible characters.
+    text = re.sub(r"(https?):", "\\1​:", text, flags=re.IGNORECASE)
+    return text
 
 
 def _base():
