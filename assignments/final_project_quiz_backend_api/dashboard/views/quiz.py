@@ -12,7 +12,7 @@ def _reset():
 
 
 def show():
-    st.header("📝 Take a Quiz")
+    st.header("Take a Quiz")
 
     questions = api.get_questions()
     # a question is only playable if it has 2+ choices and a correct answer marked
@@ -23,13 +23,13 @@ def show():
     ]
 
     if not questions:
-        st.info("No questions yet, add some in the **🛠️ Manage** tab first.")
+        st.info("No questions yet. Add some in the Manage tab first.")
         return
     if not playable:
         st.warning(
             "None of the questions are ready for a quiz yet. "
-            "Each question needs **at least 2 choices** and **one correct answer** marked. "
-            "Fix them in the **🛠️ Manage** tab."
+            "Each question needs at least 2 choices and one correct answer marked. "
+            "Fix them in the Manage tab."
         )
         return
 
@@ -38,24 +38,30 @@ def show():
         categories = sorted(set(q.get("category") or "Uncategorized" for q in playable))
 
         st.subheader("Configure your quiz")
-        st.write(f"*{len(playable)} ready question(s) available.*")
+        st.write(f"{len(playable)} ready question(s) available.")
 
         col1, col2 = st.columns(2)
         with col1:
-            selected_cat = st.selectbox("Category", ["🌐 All categories"] + categories)
+            selected_cat = st.selectbox("Category", ["All categories"] + categories)
         with col2:
             pool = [
                 q for q in playable
-                if selected_cat == "🌐 All categories"
+                if selected_cat == "All categories"
                 or q.get("category") == selected_cat
             ]
             max_q = len(pool)
             if max_q == 0:
                 st.warning(f"No ready questions in '{selected_cat}'.")
                 return
-            n = st.slider("Number of questions", 1, min(max_q, 15), min(max_q, 5))
+            if max_q == 1:
+                # st.slider requires min < max, so a single-question pool
+                # can't use a slider - just use the one available question.
+                st.write("Only 1 question available in this category.")
+                n = 1
+            else:
+                n = st.slider("Number of questions", 1, min(max_q, 15), min(max_q, 5))
 
-        if st.button("🚀 Start Quiz!", type="primary"):
+        if st.button("Start Quiz", type="primary"):
             sample = random.sample(pool, n)
             st.session_state["_quiz_qs"] = sample
             st.session_state["_quiz_answers"] = {}
@@ -75,23 +81,27 @@ def show():
 
         for i, q in enumerate(qs, 1):
             st.markdown(f"**Q{i}.  {q['question_text']}**")
-            choice_map = {c["id"]: c["choice_text"] for c in q["choices"]}
 
-            # remember the user's earlier pick if they scroll back up
+            # Use choice ids as the radio options (format_func displays the
+            # text) instead of matching a selection back to an id by
+            # comparing displayed text - that breaks if two choices in the
+            # same question happen to share identical text.
+            choice_ids = [c["id"] for c in q["choices"]]
+            choice_text_by_id = {c["id"]: c["choice_text"] for c in q["choices"]}
+
             current_id = answers.get(q["id"])
-            options = list(choice_map.values())
-            current_index = list(choice_map.keys()).index(current_id) if current_id in choice_map else None
+            current_index = choice_ids.index(current_id) if current_id in choice_ids else None
 
-            chosen_text = st.radio(
+            chosen_id = st.radio(
                 label=f"q{q['id']}",
-                options=options,
+                options=choice_ids,
                 index=current_index,
+                format_func=lambda cid: choice_text_by_id[cid],
                 key=f"radio_{q['id']}",
                 label_visibility="collapsed",
             )
 
-            if chosen_text is not None:
-                chosen_id = next(cid for cid, txt in choice_map.items() if txt == chosen_text)
+            if chosen_id is not None:
                 st.session_state["_quiz_answers"][q["id"]] = chosen_id
 
             st.divider()
@@ -101,7 +111,7 @@ def show():
         c1, c2 = st.columns([2, 3])
         with c1:
             if st.button(
-                "✅ Submit answers",
+                "Submit answers",
                 type="primary",
                 disabled=not all_answered,
                 use_container_width=True,
@@ -113,7 +123,7 @@ def show():
                 remaining = len(qs) - len(st.session_state["_quiz_answers"])
                 st.caption(f"Answer {remaining} more question(s) to submit.")
 
-        if st.button("↩ Restart", type="secondary"):
+        if st.button("Restart", type="secondary"):
             _reset()
             st.rerun()
 
@@ -133,15 +143,15 @@ def show():
 
         if pct == 100:
             st.balloons()
-            st.success(f"🎉 Perfect score!  {score}/{total}  ({pct:.0f}%)")
+            st.success(f"Perfect score: {score}/{total} ({pct:.0f}%)")
         elif pct >= 80:
-            st.success(f"🌟 Great job!  {score}/{total}  ({pct:.0f}%)")
+            st.success(f"Great job: {score}/{total} ({pct:.0f}%)")
         elif pct >= 60:
-            st.info(f"👍 Good effort!  {score}/{total}  ({pct:.0f}%)")
+            st.info(f"Good effort: {score}/{total} ({pct:.0f}%)")
         elif pct >= 40:
-            st.warning(f"📚 Keep practising!  {score}/{total}  ({pct:.0f}%)")
+            st.warning(f"Keep practising: {score}/{total} ({pct:.0f}%)")
         else:
-            st.error(f"❌ {score}/{total}  ({pct:.0f}%) - Have another go!")
+            st.error(f"{score}/{total} ({pct:.0f}%). Try again.")
 
         m1, m2, m3 = st.columns(3)
         m1.metric("Score", f"{score}/{total}")
@@ -149,7 +159,7 @@ def show():
         m3.metric("Grade", "A" if pct >= 90 else "B" if pct >= 80 else "C" if pct >= 70 else "D" if pct >= 60 else "F")
 
         st.divider()
-        st.subheader("📋 Review")
+        st.subheader("Review")
 
         for i, q in enumerate(qs, 1):
             chosen_id = answers.get(q["id"])
@@ -160,17 +170,17 @@ def show():
             chosen_text = next((c["choice_text"] for c in q["choices"] if c["id"] == chosen_id), "No answer")
             correct_text = correct_choice["choice_text"] if correct_choice else "-"
 
-            icon = "✅" if got_it else "❌"
-            with st.expander(f"{icon}  Q{i}: {q['question_text'][:70]}"):
-                st.write(f"**Your answer:** {chosen_text}")
+            status = "correct" if got_it else "incorrect"
+            with st.expander(f"Q{i} ({status}): {q['question_text'][:70]}"):
+                st.write(f"Your answer: {chosen_text}")
                 if got_it:
-                    st.success("Correct!")
+                    st.success("Correct.")
                 else:
-                    st.error(f"Incorrect. The correct answer was: **{correct_text}**")
+                    st.error(f"Incorrect. The correct answer was: {correct_text}")
                 if q.get("category"):
                     st.caption(f"Category: {q['category']}")
 
         st.divider()
-        if st.button("🔄 Take another quiz", type="primary"):
+        if st.button("Take another quiz", type="primary"):
             _reset()
             st.rerun()

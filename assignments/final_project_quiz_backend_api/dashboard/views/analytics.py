@@ -8,11 +8,11 @@ import api_client as api
 
 
 def show():
-    st.header("📊 Analytics Dashboard")
+    st.header("Analytics Dashboard")
 
     questions = api.get_questions()
     if not questions:
-        st.info("No questions yet. Go to **🛠️ Manage** and add some!")
+        st.info("No questions yet. Go to the Manage tab and add some.")
         return
 
     # build a dataframe with one row per question
@@ -43,9 +43,9 @@ def show():
 
     # top row of stats
     k1, k2, k3, k4 = st.columns(4)
-    k1.metric("📝 Total Questions", len(df_q))
-    k2.metric("🔘 Total Choices", len(df_c))
-    k3.metric("🏷️ Categories", df_q["category"].nunique())
+    k1.metric("Total Questions", len(df_q))
+    k2.metric("Total Choices", len(df_c))
+    k3.metric("Categories", df_q["category"].nunique())
     avg = f"{df_q['num_choices'].mean():.1f}" if not df_q.empty else "-"
     k4.metric("Avg Choices / Question", avg)
 
@@ -75,7 +75,7 @@ def show():
         if not df_c.empty:
             pie_df = (
                 df_c["is_correct"]
-                .map({True: "Correct ✅", False: "Incorrect ❌"})
+                .map({True: "Correct", False: "Incorrect"})
                 .value_counts()
                 .reset_index()
             )
@@ -84,7 +84,7 @@ def show():
                 pie_df, values="count", names="label",
                 hole=0.55,
                 color="label",
-                color_discrete_map={"Correct ✅": "#2ecc71", "Incorrect ❌": "#e74c3c"},
+                color_discrete_map={"Correct": "#2ecc71", "Incorrect": "#e74c3c"},
             )
             fig2.update_traces(textinfo="percent+label")
             fig2.update_layout(showlegend=False, margin=dict(t=10))
@@ -125,11 +125,11 @@ def show():
 
     # full table of questions at the bottom
     st.divider()
-    st.subheader("📋 All Questions")
+    st.subheader("All Questions")
 
     df_display = df_q[["id", "category", "question_text", "num_choices", "has_correct"]].copy()
     df_display["status"] = df_display.apply(
-        lambda r: "✅ Ready" if r["num_choices"] >= 2 and r["has_correct"] else "⚠️ Incomplete",
+        lambda r: "Ready" if r["num_choices"] >= 2 and r["has_correct"] else "Incomplete",
         axis=1,
     )
     df_display = df_display.rename(columns={
@@ -141,4 +141,4 @@ def show():
 
     incomplete = (df_q["num_choices"] < 2) | (~df_q["has_correct"])
     if incomplete.any():
-        st.warning(f"⚠️ {incomplete.sum()} question(s) have fewer than 2 choices or no correct answer marked. Fix them in the Manage tab.")
+        st.warning(f"{incomplete.sum()} question(s) have fewer than 2 choices or no correct answer marked. Fix them in the Manage tab.")

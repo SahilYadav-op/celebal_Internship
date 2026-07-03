@@ -11,7 +11,6 @@ import streamlit as st
 
 st.set_page_config(
     page_title="Quiz Backend Dashboard",
-    page_icon="🎯",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -35,13 +34,24 @@ if "api_base_url" not in st.session_state:
 import api_client as api
 from views import analytics, manage, quiz
 
+
+def _safe_show(view, label):
+    # Any unexpected error is shown as a plain message instead of letting
+    # Streamlit's default traceback through, which prints internal server
+    # file paths that shouldn't be exposed to visitors.
+    try:
+        view.show()
+    except Exception:
+        st.error(f"Something went wrong loading {label}. Please refresh and try again.")
+
+
 # sidebar
 with st.sidebar:
-    st.title("🎯 Quiz Dashboard")
+    st.title("Quiz Dashboard")
     st.caption("Quiz Backend Management System")
     st.divider()
 
-    st.subheader("⚙️ API Connection")
+    st.subheader("API Connection")
     new_url = st.text_input(
         "API base URL",
         value=st.session_state["api_base_url"],
@@ -54,30 +64,30 @@ with st.sidebar:
         st.rerun()
 
     if api.health_check():
-        st.success("🟢 Connected")
+        st.success("Connected")
     else:
-        st.error("🔴 Offline")
+        st.error("Offline")
         st.caption("Start the FastAPI server, then refresh.")
         st.code("uvicorn app.main:app --reload", language="bash")
 
     st.divider()
     st.caption("**Tabs**")
-    st.caption("📊 Analytics - charts & KPIs")
-    st.caption("🛠️ Manage - add / edit / delete")
-    st.caption("📝 Quiz - test yourself")
+    st.caption("Take a Quiz - test yourself")
+    st.caption("Manage - add / edit / delete")
+    st.caption("Analytics - charts & KPIs")
     st.caption("")
     api_docs = f"{st.session_state['api_base_url']}/docs"
-    st.markdown(f"[🔗 API docs / Swagger]({api_docs})")
+    st.markdown(f"[API docs / Swagger]({api_docs})")
 
 
-# main area with 3 tabs
-tab_analytics, tab_manage, tab_quiz = st.tabs(["📊 Analytics", "🛠️ Manage", "📝 Take a Quiz"])
-
-with tab_analytics:
-    analytics.show()
-
-with tab_manage:
-    manage.show()
+# main area with 3 tabs - quiz first, then manage, then analytics
+tab_quiz, tab_manage, tab_analytics = st.tabs(["Take a Quiz", "Manage", "Analytics"])
 
 with tab_quiz:
-    quiz.show()
+    _safe_show(quiz, "the quiz")
+
+with tab_manage:
+    _safe_show(manage, "the manage page")
+
+with tab_analytics:
+    _safe_show(analytics, "the analytics page")
