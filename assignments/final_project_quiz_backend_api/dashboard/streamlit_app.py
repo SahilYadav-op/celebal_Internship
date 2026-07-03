@@ -59,8 +59,7 @@ with st.sidebar:
     )
     if new_url.rstrip("/") != st.session_state["api_base_url"]:
         st.session_state["api_base_url"] = new_url.rstrip("/")
-        api.get_questions.clear()
-        api.get_choices.clear()
+        api.clear_cache()
         st.rerun()
 
     if api.health_check():

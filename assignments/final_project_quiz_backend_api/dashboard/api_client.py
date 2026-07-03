@@ -66,10 +66,14 @@ def _delete(path):
     return False
 
 
+def clear_cache():
+    # clear cached reads - after any write, or when the API base URL changes
+    _cached_questions.clear()
+    _cached_choices.clear()
+
+
 def _bust_cache():
-    # clear cached reads after any write so the UI shows fresh data
-    get_questions.clear()
-    get_choices.clear()
+    clear_cache()
 
 
 def health_check():
@@ -79,22 +83,61 @@ def health_check():
         return False
 
 
-# read calls, cached for 30s so we don't hit the api on every rerun
+# Read calls, cached for 30s so we don't hit the api on every rerun.
+#
+# The cached functions below raise on failure instead of showing an error
+# and returning []. This matters: st.cache_data also caches (and replays)
+# any st.error()/st.warning() calls made while the function ran, so a
+# function that "handles" its own failure by returning [] would freeze a
+# single transient error and keep replaying it for the full 30s ttl even
+# after the API has recovered. A function that raises is never cached by
+# Streamlit, so a transient failure only affects the current run - the
+# next rerun tries the real request again.
+
+def _get_json(path, params=None):
+    r = requests.get(_base() + path, params=params, timeout=10)
+    r.raise_for_status()
+    return r.json() if r.content else {}
+
 
 @st.cache_data(ttl=30)
-def get_questions(category=None):
+def _cached_questions(category=None):
     params = {"limit": 200}
     if category:
         params["category"] = category
-    return _get("/questions", params) or []
+    return _get_json("/questions", params)
 
 
 @st.cache_data(ttl=30)
-def get_choices(question_id=None):
+def _cached_choices(question_id=None):
     params = {"limit": 500}
     if question_id:
         params["question_id"] = question_id
-    return _get("/choices", params) or []
+    return _get_json("/choices", params)
+
+
+def get_questions(category=None):
+    try:
+        return _cached_questions(category)
+    except requests.exceptions.ConnectionError:
+        st.error(f"Cannot reach the API at **{_base()}**. Is the FastAPI server running?")
+    except requests.exceptions.Timeout:
+        st.warning("API is slow to respond, try again in a moment.")
+    except requests.exceptions.HTTPError as e:
+        st.error(f"API error {e.response.status_code}: {e.response.text}")
+    return []
+
+
+def get_choices(question_id=None):
+    try:
+        return _cached_choices(question_id)
+    except requests.exceptions.ConnectionError:
+        st.error(f"Cannot reach the API at **{_base()}**. Is the FastAPI server running?")
+    except requests.exceptions.Timeout:
+        st.warning("API is slow to respond, try again in a moment.")
+    except requests.exceptions.HTTPError as e:
+        st.error(f"API error {e.response.status_code}: {e.response.text}")
+    return []
 
 
 # question writes
