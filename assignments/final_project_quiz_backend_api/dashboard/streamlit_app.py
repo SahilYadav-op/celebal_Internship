@@ -63,8 +63,15 @@ with st.sidebar:
         st.success("Connected")
     else:
         st.error("Offline")
-        st.caption("Start the FastAPI server, then refresh.")
-        st.code("uvicorn app.main:app --reload", language="bash")
+        is_local = any(h in st.session_state["api_base_url"] for h in ("127.0.0.1", "localhost"))
+        if is_local:
+            st.caption("Start the FastAPI server, then refresh.")
+            st.code("uvicorn app.main:app --reload", language="bash")
+        else:
+            st.caption(
+                "The free-tier API sleeps after inactivity. "
+                "Wait about a minute, then reload the page."
+            )
 
     st.divider()
     st.caption("**Tabs**")

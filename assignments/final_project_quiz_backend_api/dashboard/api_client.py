@@ -26,6 +26,20 @@ def _base():
     return st.session_state.get("api_base_url", "http://127.0.0.1:8000").rstrip("/")
 
 
+def _is_local():
+    return any(h in _base() for h in ("127.0.0.1", "localhost"))
+
+
+def _connection_hint():
+    # The free-tier API sleeps after inactivity, so a fresh visitor's first
+    # request commonly fails to connect or 500s while it wakes up - that's
+    # not a real outage, just cold start. Only meaningful when pointed at a
+    # real deployment, not a local dev server the developer controls.
+    if _is_local():
+        return "Is the FastAPI server running?"
+    return "The free-tier API may be asleep - wait about a minute and reload the page."
+
+
 def _handle_response(r):
     try:
         r.raise_for_status()
@@ -35,7 +49,10 @@ def _handle_response(r):
             detail = r.json().get("detail", r.text)
         except Exception:
             detail = r.text
-        st.error(f"API error {r.status_code}: {detail}")
+        msg = f"API error {r.status_code}: {detail}"
+        if r.status_code >= 500 and not _is_local():
+            msg += f"  {_connection_hint()}"
+        st.error(msg)
         return None
 
 
@@ -44,7 +61,7 @@ def _get(path, params=None):
         r = requests.get(_base() + path, params=params, timeout=10)
         return _handle_response(r)
     except requests.exceptions.ConnectionError:
-        st.error(f"Cannot reach the API at **{_base()}**. Is the FastAPI server running?")
+        st.error(f"Cannot reach the API at **{_base()}**. {_connection_hint()}")
     except requests.exceptions.Timeout:
         st.warning("API is slow to respond, try again in a moment.")
     return None
@@ -55,7 +72,7 @@ def _post(path, body):
         r = requests.post(_base() + path, json=body, timeout=10)
         return _handle_response(r)
     except requests.exceptions.ConnectionError:
-        st.error(f"Cannot reach the API at **{_base()}**.")
+        st.error(f"Cannot reach the API at **{_base()}**. {_connection_hint()}")
     return None
 
 
@@ -64,7 +81,7 @@ def _put(path, body):
         r = requests.put(_base() + path, json=body, timeout=10)
         return _handle_response(r)
     except requests.exceptions.ConnectionError:
-        st.error(f"Cannot reach the API at **{_base()}**.")
+        st.error(f"Cannot reach the API at **{_base()}**. {_connection_hint()}")
     return None
 
 
@@ -74,13 +91,16 @@ def _delete(path):
         r.raise_for_status()
         return True
     except requests.exceptions.ConnectionError:
-        st.error(f"Cannot reach the API at **{_base()}**.")
+        st.error(f"Cannot reach the API at **{_base()}**. {_connection_hint()}")
     except requests.exceptions.HTTPError:
         try:
             detail = r.json().get("detail", r.text)
         except Exception:
             detail = r.text
-        st.error(f"API error {r.status_code}: {detail}")
+        msg = f"API error {r.status_code}: {detail}"
+        if r.status_code >= 500 and not _is_local():
+            msg += f"  {_connection_hint()}"
+        st.error(msg)
     return False
 
 
@@ -138,11 +158,14 @@ def get_questions(category=None):
     try:
         return _cached_questions(category)
     except requests.exceptions.ConnectionError:
-        st.error(f"Cannot reach the API at **{_base()}**. Is the FastAPI server running?")
+        st.error(f"Cannot reach the API at **{_base()}**. {_connection_hint()}")
     except requests.exceptions.Timeout:
         st.warning("API is slow to respond, try again in a moment.")
     except requests.exceptions.HTTPError as e:
-        st.error(f"API error {e.response.status_code}: {e.response.text}")
+        msg = f"API error {e.response.status_code}: {e.response.text}"
+        if e.response.status_code >= 500 and not _is_local():
+            msg += f"  {_connection_hint()}"
+        st.error(msg)
     return []
 
 
@@ -150,11 +173,14 @@ def get_choices(question_id=None):
     try:
         return _cached_choices(question_id)
     except requests.exceptions.ConnectionError:
-        st.error(f"Cannot reach the API at **{_base()}**. Is the FastAPI server running?")
+        st.error(f"Cannot reach the API at **{_base()}**. {_connection_hint()}")
     except requests.exceptions.Timeout:
         st.warning("API is slow to respond, try again in a moment.")
     except requests.exceptions.HTTPError as e:
-        st.error(f"API error {e.response.status_code}: {e.response.text}")
+        msg = f"API error {e.response.status_code}: {e.response.text}"
+        if e.response.status_code >= 500 and not _is_local():
+            msg += f"  {_connection_hint()}"
+        st.error(msg)
     return []
 
 
